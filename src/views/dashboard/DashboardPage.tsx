@@ -45,6 +45,41 @@ export const DashboardPage = () => {
         }
     }, [user, router, isHydrated, fetchTrends]);
 
+    const addOrder = useDashboardStore((state: any) => state.addOrder);
+
+    // Notification Polling
+    React.useEffect(() => {
+        if (!user) return;
+
+        const pollNotifications = async () => {
+            try {
+                const response = await fetch('https://invoice-makeaton-production.up.railway.app/api/notifications');
+                const data = await response.json();
+
+                if (Array.isArray(data) && data.length > 0) {
+                    data.forEach((n: any) => {
+                        // Check if notification already exists to avoid duplicates
+                        const exists = notifications.some((existing: any) => existing.id === n.id);
+                        if (!exists) {
+                            addNotification(n);
+                            if (n.order) {
+                                addOrder(n.order);
+                            }
+                        }
+                    });
+
+                    // Clear notifications from server once polled
+                    await fetch('https://invoice-makeaton-production.up.railway.app/api/notifications', { method: 'DELETE' });
+                }
+            } catch (error) {
+                console.error('Failed to poll notifications:', error);
+            }
+        };
+
+        const interval = setInterval(pollNotifications, 5000);
+        return () => clearInterval(interval);
+    }, [user, notifications, addNotification, addOrder]);
+
     if (!isHydrated) return null;
     if (!user) return null;
 
@@ -162,6 +197,8 @@ const NotificationPanel = ({ isOpen, onClose }: { isOpen: boolean, onClose: () =
         if (n.type === 'trend' && n.data) {
             setSelectedTrend(n.data);
             onClose();
+        } else if (n.type === 'invoice' && n.url) {
+            window.open(`https://invoice-makeaton-production.up.railway.app${n.url}`, '_blank');
         }
     };
 

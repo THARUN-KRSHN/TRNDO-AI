@@ -24,6 +24,9 @@ export interface UserProfile {
     email: string;
     phone: string;
     businessName: string;
+    businessAddress: string;
+    businessGst: string;
+    defaultUpiId: string;
     category: string;
     location: string;
     logo?: string;
@@ -69,6 +72,7 @@ interface DashboardState {
     addNotification: (notification: Omit<Notification, 'id' | 'time'>) => void;
     clearNotifications: () => void;
     updateOrder: (orderId: string, updates: Partial<Order>) => void;
+    addOrder: (order: Order) => void;
     setUser: (user: UserProfile | null) => void;
     setActiveTab: (tab: DashboardTab) => void;
     setPosterConfig: (config: Partial<PosterConfig>) => void;
@@ -127,6 +131,9 @@ export const useDashboardStore = create<DashboardState>()(
             clearNotifications: () => set({ notifications: [] }),
             updateOrder: (orderId, updates) => set((state) => ({
                 orders: state.orders.map((o) => o.id === orderId ? { ...o, ...updates } : o)
+            })),
+            addOrder: (order) => set((state) => ({
+                orders: [order, ...state.orders]
             })),
             setUser: (user) => set({ user }),
             setActiveTab: (tab) => set({ activeTab: tab }),

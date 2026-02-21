@@ -44,24 +44,74 @@ export const InvoicePanel = () => {
 
     if (!selectedOrder) return null;
 
-    const handleSubmit = () => {
-        setIsSubmitting(true);
-        setTimeout(() => {
-            setIsSubmitting(false);
-            setIsDone(true);
-            updateOrder(selectedOrder.id, {
-                status: 'completed',
-                amount: parseFloat(form.amount),
-                phone: form.phone,
-                quantity: parseInt(form.quantity)
-            });
+    const user = useDashboardStore((state: any) => state.user);
+
+    const handleSubmit = async () => {
+        if (!user) {
             addNotification({
-                title: 'Invoice Ready',
-                message: `Invoice for ${form.customer} is ready to be forwarded. Details sent to WhatsApp.`,
-                type: 'invoice'
+                title: 'Error',
+                message: 'Please complete your business profile first.',
+                type: 'info'
             });
-            setTimeout(() => setInvoiceOpen(false), 1500);
-        }, 1500);
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const response = await fetch('https://invoice-makeaton-production.up.railway.app/api/generate-invoice-direct', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    items: [{
+                        item: form.item,
+                        quantity: parseInt(form.quantity) || 1,
+                        price: parseFloat(form.amount) || 0
+                    }],
+                    upi_id: user.defaultUpiId || "merchant@upi",
+                    customer_name: form.customer,
+                    customer_phone: form.phone,
+                    payee_name: user.businessName
+                })
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `invoice_${form.customer}.pdf`);
+                document.body.appendChild(link);
+                link.click();
+                link.parentNode?.removeChild(link);
+
+                setIsDone(true);
+                updateOrder(selectedOrder.id, {
+                    status: 'completed',
+                    amount: parseFloat(form.amount),
+                    phone: form.phone,
+                    quantity: parseInt(form.quantity)
+                });
+
+                addNotification({
+                    title: 'Invoice Generated',
+                    message: `Invoice for ${form.customer} has been created and downloaded.`,
+                    type: 'invoice'
+                });
+
+                setTimeout(() => setInvoiceOpen(false), 2000);
+            } else {
+                throw new Error('Failed to generate invoice');
+            }
+        } catch (error) {
+            console.error('Invoice generation failed:', error);
+            addNotification({
+                title: 'Error',
+                message: 'Failed to generate invoice. Please check your connection.',
+                type: 'info'
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (

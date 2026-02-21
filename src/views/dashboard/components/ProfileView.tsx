@@ -14,21 +14,47 @@ export const ProfileView = () => {
     const [formData, setFormData] = useState({
         name: user?.name || '',
         businessName: user?.businessName || '',
+        businessAddress: user?.businessAddress || '',
+        businessGst: user?.businessGst || '',
+        defaultUpiId: user?.defaultUpiId || '',
         email: user?.email || '',
         phone: user?.phone || '',
         location: user?.location || '',
         category: user?.category || ''
     });
 
-    const handleSave = () => {
-        setUser({ ...user, ...formData });
+    const handleSave = async () => {
+        const updatedUser = { ...user, ...formData };
+        setUser(updatedUser);
         setIsEditing(false);
+
+        // Sync to Flask Backend
+        try {
+            await fetch('https://invoice-makeaton-production.up.railway.app/api/business-profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    business_name: formData.businessName,
+                    business_address: formData.businessAddress,
+                    business_phone: formData.phone,
+                    business_email: formData.email,
+                    business_gst: formData.businessGst,
+                    default_upi_id: formData.defaultUpiId,
+                    payee_name: formData.businessName
+                })
+            });
+        } catch (error) {
+            console.error('Failed to sync profile to backend:', error);
+        }
     };
 
     const handleCancel = () => {
         setFormData({
             name: user?.name || '',
             businessName: user?.businessName || '',
+            businessAddress: user?.businessAddress || '',
+            businessGst: user?.businessGst || '',
+            defaultUpiId: user?.defaultUpiId || '',
             email: user?.email || '',
             phone: user?.phone || '',
             location: user?.location || '',
@@ -189,10 +215,48 @@ export const ProfileView = () => {
                                     </div>
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-4 text-white/40">
-                                            <Target size={18} />
-                                            <span className="text-xs font-bold-extended uppercase italic tracking-widest">Anchor Hub</span>
+                                            <Store size={18} />
+                                            <span className="text-xs font-bold-extended uppercase italic tracking-widest">Address</span>
                                         </div>
-                                        <span className="text-xs font-bold-extended italic">Thrissur (Primary)</span>
+                                        {isEditing ? (
+                                            <input
+                                                value={formData.businessAddress}
+                                                onChange={e => setFormData({ ...formData, businessAddress: e.target.value })}
+                                                className="text-xs font-bold-extended italic bg-white/10 rounded px-2"
+                                            />
+                                        ) : (
+                                            <span className="text-xs font-bold-extended italic">{user?.businessAddress}</span>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-4 text-white/40">
+                                            <Shield size={18} />
+                                            <span className="text-xs font-bold-extended uppercase italic tracking-widest">GST Number</span>
+                                        </div>
+                                        {isEditing ? (
+                                            <input
+                                                value={formData.businessGst}
+                                                onChange={e => setFormData({ ...formData, businessGst: e.target.value })}
+                                                className="text-xs font-bold-extended italic bg-white/10 rounded px-2"
+                                            />
+                                        ) : (
+                                            <span className="text-xs font-bold-extended italic">{user?.businessGst}</span>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-4 text-white/40">
+                                            <CreditCard size={18} />
+                                            <span className="text-xs font-bold-extended uppercase italic tracking-widest">Default UPI</span>
+                                        </div>
+                                        {isEditing ? (
+                                            <input
+                                                value={formData.defaultUpiId}
+                                                onChange={e => setFormData({ ...formData, defaultUpiId: e.target.value })}
+                                                className="text-xs font-bold-extended italic bg-white/10 rounded px-2"
+                                            />
+                                        ) : (
+                                            <span className="text-xs font-bold-extended italic">{user?.defaultUpiId}</span>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-400/10 rounded-full blur-[100px]" />
