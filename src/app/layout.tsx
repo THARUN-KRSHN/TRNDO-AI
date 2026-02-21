@@ -15,7 +15,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "trndO | Hyper-Local AI Operating System",
+  title: "TRNDO AI | Hyper-Local AI Operating System",
   description: "Advanced AI for MSMEs in small-town retail ecosystems.",
 };
 

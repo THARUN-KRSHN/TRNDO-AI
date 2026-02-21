@@ -1,10 +1,35 @@
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Mail, Lock, Phone, User } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useDashboardStore } from '@/store/useDashboardStore';
 
 export const SignupPage = () => {
+    const router = useRouter();
+    const setUser = useDashboardStore((state: any) => state.setUser);
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        password: ''
+    });
+
+    const handleSignup = (e: React.FormEvent) => {
+        e.preventDefault();
+        // Simulate signup and save to store
+        setUser({
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            businessName: '',
+            category: '',
+            location: ''
+        });
+        router.push('/onboarding');
+    };
+
     return (
         <main className="min-h-screen flex flex-col md:flex-row bg-white overflow-hidden">
             {/* Left Side: Brand Narrative */}
@@ -14,7 +39,7 @@ export const SignupPage = () => {
                     <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center">
                         <span className="text-white text-xs font-bold-extended italic">O</span>
                     </div>
-                    <span className="text-xl font-bold-extended tracking-tighter text-black uppercase italic">trndO AI</span>
+                    <span className="text-xl font-bold-extended tracking-tighter text-black uppercase italic">TRNDO AI</span>
                 </Link>
 
                 {/* Narrative Content */}
@@ -65,13 +90,16 @@ export const SignupPage = () => {
                             <p className="text-sm text-black/40 font-bold-extended uppercase tracking-widest italic">Enter your details to get started.</p>
                         </header>
 
-                        <form className="space-y-6">
+                        <form onSubmit={handleSignup} className="space-y-6">
                             <div className="space-y-2">
                                 <div className="relative">
                                     <User className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
                                     <input
                                         type="text"
                                         placeholder="full name"
+                                        required
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                         className="w-full pl-14 pr-6 py-5 rounded-2xl bg-[#F8F8F8] border-none focus:ring-2 focus:ring-black transition-all font-bold-extended text-sm uppercase italic placeholder:text-black/20"
                                     />
                                 </div>
@@ -83,6 +111,9 @@ export const SignupPage = () => {
                                     <input
                                         type="email"
                                         placeholder="business email"
+                                        required
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                         className="w-full pl-14 pr-6 py-5 rounded-2xl bg-[#F8F8F8] border-none focus:ring-2 focus:ring-black transition-all font-bold-extended text-sm uppercase italic placeholder:text-black/20"
                                     />
                                 </div>
@@ -94,6 +125,9 @@ export const SignupPage = () => {
                                     <input
                                         type="tel"
                                         placeholder="whatsapp mobile number"
+                                        required
+                                        value={formData.phone}
+                                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                         className="w-full pl-14 pr-6 py-5 rounded-2xl bg-[#F8F8F8] border-none focus:ring-2 focus:ring-black transition-all font-bold-extended text-sm uppercase italic placeholder:text-black/20"
                                     />
                                 </div>
@@ -105,17 +139,20 @@ export const SignupPage = () => {
                                     <input
                                         type="password"
                                         placeholder="create password (min. 8 chars)"
+                                        required
+                                        value={formData.password}
+                                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                         className="w-full pl-14 pr-6 py-5 rounded-2xl bg-[#F8F8F8] border-none focus:ring-2 focus:ring-black transition-all font-bold-extended text-sm uppercase italic placeholder:text-black/20"
                                     />
                                 </div>
                             </div>
 
-                            <Link
-                                href="/onboarding"
+                            <button
+                                type="submit"
                                 className="w-full py-5 rounded-2xl bg-black text-white font-bold-extended uppercase italic text-center text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-black/20 flex items-center justify-center gap-2"
                             >
                                 Submit & Continue
-                            </Link>
+                            </button>
 
                             <div className="text-center pt-4">
                                 <p className="text-[10px] font-bold-extended uppercase tracking-widest text-black/30">
@@ -128,4 +165,4 @@ export const SignupPage = () => {
             </section>
         </main>
     );
-}
+};

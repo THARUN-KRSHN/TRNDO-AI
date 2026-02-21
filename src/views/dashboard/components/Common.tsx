@@ -6,7 +6,7 @@ export const BrandLogo = () => {
     return (
         <div className="flex items-center gap-2">
             <span className="text-xl font-bold-extended tracking-tighter text-black uppercase italic scale-x-110 origin-left">
-                TRNDO
+                TRNDO AI
             </span>
             <span className="text-xs font-thin-extended tracking-widest text-black/30 uppercase ml-2">
                 AI Intelligence

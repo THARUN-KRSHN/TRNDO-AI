@@ -1,8 +1,10 @@
 "use client";
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Store, MapPin, Target, Sparkles, Check, QrCode, Upload, IndianRupee, Percent } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Store, MapPin, Target, Sparkles, Check, IndianRupee, Percent, Upload } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useDashboardStore } from '@/store/useDashboardStore';
 
 const steps = [
     { id: 1, name: "Business Profile", icon: Store },
@@ -18,21 +20,35 @@ const categories = [
 ];
 
 export const OnboardingPage = () => {
+    const router = useRouter();
+    const user = useDashboardStore((state: any) => state.user);
+    const setUser = useDashboardStore((state: any) => state.setUser);
     const [currentStep, setCurrentStep] = useState(1);
     const [formData, setFormData] = useState({
-        businessName: "",
-        gstId: "",
-        category: "",
-        location: "Irinjalakuda",
+        businessName: user?.businessName || "",
+        category: user?.category || "",
+        location: user?.location || "Irinjalakuda",
         urbanHub: "Thrissur",
         selectedKeywords: [] as string[],
         upiId: "",
         currency: "INR",
         taxPercentage: "5",
+        logo: user?.logo || null,
     });
 
     const nextStep = () => setCurrentStep(prev => Math.min(prev + 1, 3));
     const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 1));
+
+    const handleFinish = () => {
+        setUser({
+            ...user!,
+            businessName: formData.businessName,
+            category: formData.category,
+            location: formData.location,
+            logo: formData.logo || undefined
+        });
+        router.push('/dashboard');
+    };
 
     const toggleKeyword = (keyword: string) => {
         setFormData(prev => ({
@@ -52,7 +68,7 @@ export const OnboardingPage = () => {
                     <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center">
                         <span className="text-white text-xs font-bold-extended italic">O</span>
                     </div>
-                    <span className="text-xl font-bold-extended tracking-tighter text-black uppercase italic">trndO AI</span>
+                    <span className="text-xl font-bold-extended tracking-tighter text-black uppercase italic">TRNDO AI</span>
                 </Link>
 
                 {/* Narrative Content */}
@@ -126,9 +142,30 @@ export const OnboardingPage = () => {
                                     <div className="space-y-6">
                                         <div className="flex justify-center mb-4">
                                             <div className="relative group">
-                                                <div className="w-24 h-24 rounded-3xl bg-[#F8F8F8] border-2 border-dashed border-black/5 flex flex-col items-center justify-center cursor-pointer transition-all hover:bg-black/5">
-                                                    <Upload className="w-6 h-6 text-black/20" />
-                                                    <span className="text-[8px] font-bold-extended uppercase text-black/40 mt-1">Upload Logo</span>
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                                    onChange={(e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (file) {
+                                                            const reader = new FileReader();
+                                                            reader.onloadend = () => {
+                                                                setFormData({ ...formData, logo: reader.result as string } as any);
+                                                            };
+                                                            reader.readAsDataURL(file);
+                                                        }
+                                                    }}
+                                                />
+                                                <div className={`w-24 h-24 rounded-3xl bg-[#F8F8F8] border-2 border-dashed ${formData.logo ? 'border-emerald-500' : 'border-black/5'} flex flex-col items-center justify-center transition-all group-hover:bg-black/5 overflow-hidden`}>
+                                                    {formData.logo ? (
+                                                        <img src={formData.logo} alt="Logo" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <>
+                                                            <Upload className="w-6 h-6 text-black/20" />
+                                                            <span className="text-[8px] font-bold-extended uppercase text-black/40 mt-1">Upload Logo</span>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -141,19 +178,6 @@ export const OnboardingPage = () => {
                                                     placeholder="Official Business Name"
                                                     value={formData.businessName}
                                                     onChange={e => setFormData({ ...formData, businessName: e.target.value })}
-                                                    className="w-full pl-14 pr-6 py-5 rounded-2xl bg-[#F8F8F8] border-none focus:ring-2 focus:ring-black transition-all font-bold-extended text-sm uppercase italic placeholder:text-black/20"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <div className="relative">
-                                                <Check className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
-                                                <input
-                                                    type="text"
-                                                    placeholder="GST ID (Optional)"
-                                                    value={formData.gstId}
-                                                    onChange={e => setFormData({ ...formData, gstId: e.target.value })}
                                                     className="w-full pl-14 pr-6 py-5 rounded-2xl bg-[#F8F8F8] border-none focus:ring-2 focus:ring-black transition-all font-bold-extended text-sm uppercase italic placeholder:text-black/20"
                                                 />
                                             </div>
@@ -256,7 +280,7 @@ export const OnboardingPage = () => {
                                     <div className="space-y-6">
                                         <div className="space-y-2">
                                             <div className="relative">
-                                                <QrCode className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
+                                                <IndianRupee className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
                                                 <input
                                                     type="text"
                                                     placeholder="UPI ID (VPA) e.g. shop@upi"
@@ -299,13 +323,6 @@ export const OnboardingPage = () => {
                                                 </div>
                                             </div>
                                         </div>
-
-                                        <div className="p-8 rounded-3xl bg-emerald-50 border border-emerald-100 flex flex-col items-center text-center space-y-4">
-                                            <Sparkles className="w-8 h-8 text-emerald-500" />
-                                            <p className="text-[10px] font-bold-extended text-emerald-900 uppercase tracking-widest italic leading-relaxed">
-                                                Setting up these fields ensures your <br /> WhatsApp Chat-to-Invoice engine <br /> works with 100% precision.
-                                            </p>
-                                        </div>
                                     </div>
                                 </motion.div>
                             )}
@@ -322,12 +339,12 @@ export const OnboardingPage = () => {
                                     Next <ArrowRight className="w-4 h-4" />
                                 </button>
                             ) : (
-                                <Link
-                                    href="/dashboard"
+                                <button
+                                    onClick={handleFinish}
                                     className="w-full py-5 rounded-2xl bg-emerald-400 text-black font-bold-extended uppercase italic text-center text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-emerald-400/20 flex items-center justify-center gap-2"
                                 >
                                     Finish Launch <Check className="w-4 h-4" />
-                                </Link>
+                                </button>
                             )}
                         </div>
                     </div>
@@ -335,4 +352,4 @@ export const OnboardingPage = () => {
             </section>
         </main>
     );
-}
+};

@@ -4,7 +4,7 @@ export async function POST(req: Request) {
     try {
         const body = await req.json();
 
-        // trndO Agentic Parsing Logic
+        // TRNDO AI Agentic Parsing Logic
         // 1. Multilingual parsing (Malayalam + Hinglish)
         // 2. Intent Detection
         // 3. Auto-tagging

@@ -31,6 +31,12 @@ export const TrendCard = ({ trend }: { trend: Trend }) => {
 
     const { icon: Icon, color, bgGlow, label } = config[trend.state];
 
+    const getColor = (value: number) => {
+        // 0 is red (0), 120 is green
+        const hue = (value / 100) * 120;
+        return `hsl(${hue}, 80%, 50%)`;
+    };
+
     return (
         <motion.div
             whileHover={{ scale: 1.02 }}
@@ -53,36 +59,44 @@ export const TrendCard = ({ trend }: { trend: Trend }) => {
                     {trend.keyword}
                 </h3>
 
-                <div className="flex flex-col gap-4 mt-8">
-                    <div className="flex justify-between items-end">
-                        <span className="text-[10px] font-thin-extended uppercase tracking-widest text-black/40">Anchor Velocity</span>
-                        <span className="text-sm font-bold-extended italic">{trend.anchorVelocity}%</span>
-                    </div>
-                    <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
-                        <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${trend.anchorVelocity}%` }}
-                            className={`h-full ${color.replace('text', 'bg')}`}
-                        />
-                    </div>
-
-                    <div className="flex justify-between items-end">
-                        <span className="text-[10px] font-thin-extended uppercase tracking-widest text-black/40">Local Pulse</span>
-                        <span className="text-sm font-bold-extended italic">{trend.localVelocity}%</span>
-                    </div>
-                    <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
-                        <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${trend.localVelocity}%` }}
-                            className="h-full bg-black/10"
-                        />
+                <div className="mt-8 flex flex-col items-center">
+                    <div className="relative w-48 h-24 overflow-hidden">
+                        <svg viewBox="0 0 100 50" className="w-full h-full">
+                            {/* Background track */}
+                            <path
+                                d="M 10 45 A 35 35 0 0 1 90 45"
+                                fill="none"
+                                stroke="#f3f4f6"
+                                strokeWidth="8"
+                                strokeLinecap="round"
+                                strokeDasharray="2, 2"
+                            />
+                            {/* Active Gauge */}
+                            <motion.path
+                                d="M 10 45 A 35 35 0 0 1 90 45"
+                                fill="none"
+                                initial={{ pathLength: 0 }}
+                                animate={{ pathLength: trend.anchorVelocity / 100 }}
+                                transition={{ duration: 1.5, ease: "easeOut" }}
+                                stroke={getColor(trend.anchorVelocity)}
+                                strokeWidth="8"
+                                strokeLinecap="round"
+                                strokeDasharray="2, 2"
+                            />
+                        </svg>
+                        <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center justify-end h-full pb-1">
+                            <span className="text-3xl font-bold-extended italic leading-none">{trend.anchorVelocity}</span>
+                            <span className="text-[8px] font-bold-extended uppercase tracking-[0.2em] opacity-40">Velocity %</span>
+                        </div>
                     </div>
                 </div>
 
                 <div className="mt-8 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
                     <div className="flex items-center gap-2 text-purple-600">
-                        <Sparkles size={14} />
-                        <span className="text-[10px] font-bold-extended uppercase italic">Create AI Ads</span>
+                        <Sparkles size={14} className={trend.id.startsWith('api-') ? "animate-pulse" : ""} />
+                        <span className="text-[10px] font-bold-extended uppercase italic">
+                            {trend.id.startsWith('api-') ? "Real-time Insight" : "Create AI Ads"}
+                        </span>
                     </div>
                     <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center">
                         <span className="text-xs">→</span>

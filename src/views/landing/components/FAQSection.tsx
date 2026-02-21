@@ -6,7 +6,7 @@ import { Plus } from 'lucide-react';
 export const FAQSection = () => {
     const [openIndex, setOpenIndex] = useState(0);
     const faqs = [
-        { q: "Does trndO work with regular WhatsApp?", a: "Yes. It integrates with WhatsApp Business API but feels like regular chat to your customers. Owners don't need a separate app." },
+        { q: "Does TRNDO AI work with regular WhatsApp?", a: "Yes. It integrates with WhatsApp Business API but feels like regular chat to your customers. Owners don't need a separate app." },
         { q: "Is it really built for Malayalam?", a: "Our NLP is proprietary and specifically fine-tuned for Manglish and regional Kerala dialects. It won't fail or misunderstand local slang." },
         { q: "How accurate is the trend scoring?", a: "We use a 50km radius weighted scoring system that filters out national noise for local relevance. If Kochi reacts, Irinjalakuda knows." }
     ];
