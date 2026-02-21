@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+:root {
+  --background: #F8F8F8;
+  --foreground: #0A0A0A;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-bold: var(--font-syne);
+  --font-thin: var(--font-inter);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-thin);
+  /* Default to Thin */
+  font-weight: 100;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Global Typography Helpers */
+h1,
+h2,
+h3,
+h4,
+.font-bold-extended {
+  font-family: var(--font-bold);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  /* Tighter tracking for bold extended */
+  text-transform: none;
+}
+
+.font-thin-extended {
+  font-family: var(--font-thin);
+  font-weight: 100;
+  letter-spacing: 0.05em;
+  /* Wider tracking for thin extended */
+}
+
+/* Custom extended look */
+.extended {
+  transform: scaleX(1.1);
+  display: inline-block;
+  transform-origin: left;
+}
