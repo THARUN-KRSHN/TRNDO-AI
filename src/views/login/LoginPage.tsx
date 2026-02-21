@@ -1,10 +1,33 @@
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Mail, Lock } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useDashboardStore } from '@/store/useDashboardStore';
 
 export const LoginPage = () => {
+    const router = useRouter();
+    const setUser = useDashboardStore((state: any) => state.setUser);
+    const [loginData, setLoginData] = useState({
+        identifier: '',
+        password: ''
+    });
+
+    const handleLogin = (e: React.FormEvent) => {
+        e.preventDefault();
+        // Simulate login
+        setUser({
+            name: 'Tharun Krishna',
+            email: loginData.identifier.includes('@') ? loginData.identifier : 'tharun@example.com',
+            phone: !loginData.identifier.includes('@') ? loginData.identifier : '9876543210',
+            businessName: 'Irinjalakuda Bakes',
+            category: 'Bakery & Sweets',
+            location: 'Irinjalakuda'
+        });
+        router.push('/dashboard');
+    };
+
     return (
         <main className="min-h-screen flex flex-col md:flex-row bg-white overflow-hidden">
             {/* Left Side: Brand Narrative */}
@@ -14,7 +37,7 @@ export const LoginPage = () => {
                     <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center">
                         <span className="text-white text-xs font-bold-extended italic">O</span>
                     </div>
-                    <span className="text-xl font-bold-extended tracking-tighter text-black uppercase italic">trndO AI</span>
+                    <span className="text-xl font-bold-extended tracking-tighter text-black uppercase italic">TRNDO AI</span>
                 </Link>
 
                 {/* Narrative Content */}
@@ -65,13 +88,16 @@ export const LoginPage = () => {
                             <p className="text-sm text-black/40 font-bold-extended uppercase tracking-widest italic">Enter your credentials to manage your store.</p>
                         </header>
 
-                        <form className="space-y-6">
+                        <form onSubmit={handleLogin} className="space-y-6">
                             <div className="space-y-2">
                                 <div className="relative">
                                     <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
                                     <input
                                         type="text"
                                         placeholder="email or phone number"
+                                        required
+                                        value={loginData.identifier}
+                                        onChange={(e) => setLoginData({ ...loginData, identifier: e.target.value })}
                                         className="w-full pl-14 pr-6 py-5 rounded-2xl bg-[#F8F8F8] border-none focus:ring-2 focus:ring-black transition-all font-bold-extended text-sm uppercase italic placeholder:text-black/20"
                                     />
                                 </div>
@@ -83,6 +109,9 @@ export const LoginPage = () => {
                                     <input
                                         type="password"
                                         placeholder="password"
+                                        required
+                                        value={loginData.password}
+                                        onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                                         className="w-full pl-14 pr-6 py-5 rounded-2xl bg-[#F8F8F8] border-none focus:ring-2 focus:ring-black transition-all font-bold-extended text-sm uppercase italic placeholder:text-black/20"
                                     />
                                 </div>
@@ -97,12 +126,12 @@ export const LoginPage = () => {
                             </div>
 
                             <div className="flex gap-4">
-                                <Link
-                                    href="/dashboard"
+                                <button
+                                    type="submit"
                                     className="flex-1 py-5 rounded-2xl bg-black text-white font-bold-extended uppercase italic text-center text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-black/10 flex items-center justify-center"
                                 >
                                     Sign In
-                                </Link>
+                                </button>
                                 <Link
                                     href="/signup"
                                     className="flex-1 py-5 rounded-2xl border-2 border-black/5 text-black font-bold-extended uppercase italic text-center text-sm hover:bg-gray-50 transition-all flex items-center justify-center"
@@ -116,4 +145,4 @@ export const LoginPage = () => {
             </section>
         </main>
     );
-}
+};

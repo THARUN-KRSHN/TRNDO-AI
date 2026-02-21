@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 export interface Trend {
     id: string;
@@ -18,6 +19,24 @@ export interface Order {
     status: 'pending' | 'in_progress' | 'completed';
 }
 
+export interface UserProfile {
+    name: string;
+    email: string;
+    phone: string;
+    businessName: string;
+    category: string;
+    location: string;
+    logo?: string;
+}
+
+export interface PosterConfig {
+    template: number;
+    bgColor: string;
+    textColor: string;
+}
+
+export type DashboardTab = 'overview' | 'orders' | 'trends' | 'settings';
+
 interface DashboardState {
     trends: Trend[];
     orders: Order[];
@@ -25,6 +44,11 @@ interface DashboardState {
     selectedOrder: Order | null;
     isDrawerOpen: boolean;
     isInvoiceOpen: boolean;
+    user: UserProfile | null;
+    activeTab: DashboardTab;
+    posterConfig: PosterConfig;
+    isSyncingTrends: boolean;
+    lastOccasion: string | null;
     setTrends: (trends: Trend[]) => void;
     setOrders: (orders: Order[]) => void;
     setSelectedTrend: (trend: Trend | null) => void;
@@ -32,30 +56,124 @@ interface DashboardState {
     setDrawerOpen: (isOpen: boolean) => void;
     setInvoiceOpen: (isOpen: boolean) => void;
     updateOrder: (orderId: string, updates: Partial<Order>) => void;
+    setUser: (user: UserProfile | null) => void;
+    setActiveTab: (tab: DashboardTab) => void;
+    setPosterConfig: (config: Partial<PosterConfig>) => void;
+    fetchTrends: (filters?: { occasion?: string, location?: string, timeframe?: string }) => Promise<void>;
+    logout: () => void;
 }
 
-export const useDashboardStore = create<DashboardState>()((set) => ({
-    trends: [
-        { id: '1', keyword: "Lotus Biscoff Shake", anchorVelocity: 87, localVelocity: 32, state: 'rising' },
-        { id: '2', keyword: "Oversized Linen", anchorVelocity: 92, localVelocity: 88, state: 'saturated' },
-        { id: '3', keyword: "Vintage Film Cam", anchorVelocity: 45, localVelocity: 72, state: 'fading' },
-    ],
-    orders: [
-        { id: '1', customer: "Rahul", item: "Al-Fahm Mandhi", quantity: 2, phone: "9876543210", amount: 450, status: 'in_progress' },
-        { id: '2', customer: "Anjali", item: "Korean Buns", quantity: null, phone: null, amount: null, status: 'pending' },
-        { id: '3', customer: "Kevin", item: "Cold Brew", quantity: 5, phone: "9000012345", amount: 750, status: 'in_progress' },
-    ],
-    selectedTrend: null,
-    selectedOrder: null,
-    isDrawerOpen: false,
-    isInvoiceOpen: false,
-    setTrends: (trends: Trend[]) => set({ trends }),
-    setOrders: (orders: Order[]) => set({ orders }),
-    setSelectedTrend: (trend: Trend | null) => set({ selectedTrend: trend, isDrawerOpen: !!trend }),
-    setSelectedOrder: (order: Order | null) => set({ selectedOrder: order, isInvoiceOpen: !!order }),
-    setDrawerOpen: (isOpen: boolean) => set({ isDrawerOpen: isOpen }),
-    setInvoiceOpen: (isOpen: boolean) => set({ isInvoiceOpen: isOpen }),
-    updateOrder: (orderId: string, updates: Partial<Order>) => set((state: DashboardState) => ({
-        orders: state.orders.map((o: Order) => o.id === orderId ? { ...o, ...updates } : o)
-    })),
-}));
+const INITIAL_TRENDS: Trend[] = [
+    { id: '1', keyword: "Lotus Biscoff Shake", anchorVelocity: 87, localVelocity: 32, state: 'rising' },
+    { id: '2', keyword: "Oversized Linen", anchorVelocity: 92, localVelocity: 88, state: 'saturated' },
+    { id: '3', keyword: "Vintage Film Cam", anchorVelocity: 45, localVelocity: 72, state: 'fading' },
+];
+
+const INITIAL_ORDERS: Order[] = [
+    { id: '1', customer: "Rahul", item: "Al-Fahm Mandhi", quantity: 2, phone: "9876543210", amount: 450, status: 'in_progress' },
+    { id: '2', customer: "Anjali", item: "Korean Buns", quantity: null, phone: null, amount: null, status: 'pending' },
+    { id: '3', customer: "Kevin", item: "Cold Brew", quantity: 5, phone: "9000012345", amount: 750, status: 'in_progress' },
+];
+
+export const useDashboardStore = create<DashboardState>()(
+    persist(
+        (set, get) => ({
+            trends: INITIAL_TRENDS,
+            orders: INITIAL_ORDERS,
+            selectedTrend: null,
+            selectedOrder: null,
+            isDrawerOpen: false,
+            isInvoiceOpen: false,
+            user: null,
+            activeTab: 'overview',
+            posterConfig: {
+                template: 1,
+                bgColor: '#000000',
+                textColor: '#FFFFFF'
+            },
+            isSyncingTrends: false,
+            lastOccasion: null,
+            setTrends: (trends) => set({ trends }),
+            setOrders: (orders) => set({ orders }),
+            setSelectedTrend: (trend) => set({ selectedTrend: trend, isDrawerOpen: !!trend }),
+            setSelectedOrder: (order) => set({ selectedOrder: order, isInvoiceOpen: !!order }),
+            setDrawerOpen: (isOpen) => set({ isDrawerOpen: isOpen }),
+            setInvoiceOpen: (isOpen) => set({ isInvoiceOpen: isOpen }),
+            updateOrder: (orderId, updates) => set((state) => ({
+                orders: state.orders.map((o) => o.id === orderId ? { ...o, ...updates } : o)
+            })),
+            setUser: (user) => set({ user }),
+            setActiveTab: (tab) => set({ activeTab: tab }),
+            setPosterConfig: (config) => set((state) => ({
+                posterConfig: { ...state.posterConfig, ...config }
+            })),
+            fetchTrends: async (filters) => {
+                const state = get() as DashboardState;
+                const derivedOccasion = filters?.occasion ||
+                    (state.user ? `I produce goods and services for ${state.user.businessName} in ${state.user.location}` : "I produce goods and services for small scale bakery / pastery shops in thrissur");
+
+                const derivedLocation = filters?.location || 'IN-KL';
+                const derivedTimeframe = filters?.timeframe || 'now 7-d';
+
+                const cacheKey = `${derivedOccasion}-${derivedLocation}-${derivedTimeframe}`;
+
+                // Caching: Skip if same filters and trends already exist
+                if (state.lastOccasion === cacheKey && state.trends.length > 0) {
+                    console.log("Using cached trends for:", cacheKey);
+                    return;
+                }
+
+                set({ isSyncingTrends: true });
+                try {
+                    const response = await fetch('/api/trends', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            occasion: derivedOccasion,
+                            location: derivedLocation,
+                            timeframe: derivedTimeframe
+                        })
+                    });
+                    const data = await response.json();
+
+                    if (data.results) {
+                        const newTrends: Trend[] = Object.entries(data.results).map(([keyword, score], index) => {
+                            const val = Number(score);
+                            let trendState: 'rising' | 'saturated' | 'fading' = 'saturated';
+                            if (val > 50) trendState = 'rising';
+                            else if (val < 10) trendState = 'fading';
+
+                            return {
+                                id: `api-${index}-${Date.now()}`,
+                                keyword,
+                                anchorVelocity: val,
+                                localVelocity: val,
+                                state: trendState
+                            };
+                        });
+                        set({ trends: newTrends, lastOccasion: cacheKey });
+                    } else if (data.error) {
+                        throw new Error(data.error);
+                    }
+                } catch (error: any) {
+                    console.error('Failed to fetch trends:', error);
+                } finally {
+                    set({ isSyncingTrends: false });
+                }
+            },
+            logout: () => set({ user: null, activeTab: 'overview' }),
+        }),
+        {
+            name: 'trndo-dashboard-storage',
+            storage: createJSONStorage(() => localStorage),
+            partialize: (state) => ({
+                user: state.user,
+                trends: state.trends,
+                orders: state.orders,
+                activeTab: state.activeTab,
+                posterConfig: state.posterConfig,
+                lastOccasion: state.lastOccasion,
+            }),
+        }
+    )
+);
