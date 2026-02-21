@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, Copy, Check, MessageCircle, AlertCircle, Instagram, Wand2, Tag, Calendar, BadgePercent, Loader2, Edit3, Share2 } from 'lucide-react';
+import { TrendCardSkeleton } from './TrendCard';
 import { useDashboardStore } from '@/store/useDashboardStore';
 
 export const CreativeDrawer = () => {
@@ -192,31 +193,31 @@ export const CreativeDrawer = () => {
                                         <span className="text-[10px] font-bold-extended uppercase tracking-widest text-black/60 italic">Contextual Intelligence</span>
                                     </div>
                                     <div className="grid grid-cols-1 gap-3">
-                                        <div className="flex items-center gap-3 bg-gray-50 border border-black/5 rounded-2xl px-4 py-3 shadow-sm">
+                                        <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-5 py-4 transition-all focus-within:bg-white focus-within:shadow-md">
                                             <Tag size={14} className="text-black/30" />
                                             <input
                                                 placeholder="Price (e.g. ₹199)"
                                                 value={extraDetails.price}
                                                 onChange={(e) => setExtraDetails({ ...extraDetails, price: e.target.value })}
-                                                className="bg-transparent border-none focus:ring-0 text-[10px] font-bold-extended uppercase italic w-full p-0"
+                                                className="bg-transparent border-none focus:ring-0 outline-none text-[13px] font-bold-extended uppercase italic w-full p-0"
                                             />
                                         </div>
-                                        <div className="flex items-center gap-3 bg-gray-50 border border-black/5 rounded-2xl px-4 py-3 shadow-sm">
+                                        <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-5 py-4 transition-all focus-within:bg-white focus-within:shadow-md">
                                             <BadgePercent size={14} className="text-black/30" />
                                             <input
                                                 placeholder="Offer (e.g. 20% OFF)"
                                                 value={extraDetails.offer}
                                                 onChange={(e) => setExtraDetails({ ...extraDetails, offer: e.target.value })}
-                                                className="bg-transparent border-none focus:ring-0 text-[10px] font-bold-extended uppercase italic w-full p-0"
+                                                className="bg-transparent border-none focus:ring-0 outline-none text-[13px] font-bold-extended uppercase italic w-full p-0"
                                             />
                                         </div>
-                                        <div className="flex items-center gap-3 bg-gray-50 border border-black/5 rounded-2xl px-4 py-3 shadow-sm">
+                                        <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-5 py-4 transition-all focus-within:bg-white focus-within:shadow-md">
                                             <Sparkles size={14} className="text-black/30" />
                                             <input
                                                 placeholder="Occasion (e.g. Drinks and food)"
                                                 value={extraDetails.occasion}
                                                 onChange={(e) => setExtraDetails({ ...extraDetails, occasion: e.target.value })}
-                                                className="bg-transparent border-none focus:ring-0 text-[10px] font-bold-extended uppercase italic w-full p-0"
+                                                className="bg-transparent border-none focus:ring-0 outline-none text-[13px] font-bold-extended uppercase italic w-full p-0"
                                             />
                                         </div>
                                         <button

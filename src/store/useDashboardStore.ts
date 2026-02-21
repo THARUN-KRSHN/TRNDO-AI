@@ -35,6 +35,16 @@ export interface PosterConfig {
     textColor: string;
 }
 
+export interface Notification {
+    id: string;
+    title: string;
+    message: string;
+    time: string;
+    type: 'trend' | 'order' | 'info' | 'invoice';
+    data?: any;
+    read?: boolean;
+}
+
 export type DashboardTab = 'overview' | 'orders' | 'trends' | 'settings';
 
 interface DashboardState {
@@ -47,6 +57,7 @@ interface DashboardState {
     user: UserProfile | null;
     activeTab: DashboardTab;
     posterConfig: PosterConfig;
+    notifications: Notification[];
     isSyncingTrends: boolean;
     lastOccasion: string | null;
     setTrends: (trends: Trend[]) => void;
@@ -55,6 +66,8 @@ interface DashboardState {
     setSelectedOrder: (order: Order | null) => void;
     setDrawerOpen: (isOpen: boolean) => void;
     setInvoiceOpen: (isOpen: boolean) => void;
+    addNotification: (notification: Omit<Notification, 'id' | 'time'>) => void;
+    clearNotifications: () => void;
     updateOrder: (orderId: string, updates: Partial<Order>) => void;
     setUser: (user: UserProfile | null) => void;
     setActiveTab: (tab: DashboardTab) => void;
@@ -93,12 +106,25 @@ export const useDashboardStore = create<DashboardState>()(
             },
             isSyncingTrends: false,
             lastOccasion: null,
+            notifications: [],
             setTrends: (trends) => set({ trends }),
             setOrders: (orders) => set({ orders }),
             setSelectedTrend: (trend) => set({ selectedTrend: trend, isDrawerOpen: !!trend }),
             setSelectedOrder: (order) => set({ selectedOrder: order, isInvoiceOpen: !!order }),
             setDrawerOpen: (isOpen) => set({ isDrawerOpen: isOpen }),
             setInvoiceOpen: (isOpen) => set({ isInvoiceOpen: isOpen }),
+            addNotification: (n) => set((state) => ({
+                notifications: [
+                    {
+                        ...n,
+                        id: Math.random().toString(36).substr(2, 9),
+                        time: 'Just now',
+                        read: false
+                    },
+                    ...state.notifications
+                ].slice(0, 10) // Keep last 10
+            })),
+            clearNotifications: () => set({ notifications: [] }),
             updateOrder: (orderId, updates) => set((state) => ({
                 orders: state.orders.map((o) => o.id === orderId ? { ...o, ...updates } : o)
             })),
@@ -152,6 +178,17 @@ export const useDashboardStore = create<DashboardState>()(
                             };
                         });
                         set({ trends: newTrends, lastOccasion: cacheKey });
+
+                        // Add top trend notification
+                        const topTrend = [...newTrends].sort((a, b) => b.anchorVelocity - a.anchorVelocity)[0];
+                        if (topTrend) {
+                            get().addNotification({
+                                title: 'Market Spike!',
+                                message: `${topTrend.keyword} is trending at ${topTrend.anchorVelocity}% velocity`,
+                                type: 'trend',
+                                data: topTrend
+                            });
+                        }
                     } else if (data.error) {
                         throw new Error(data.error);
                     }
@@ -173,6 +210,7 @@ export const useDashboardStore = create<DashboardState>()(
                 activeTab: state.activeTab,
                 posterConfig: state.posterConfig,
                 lastOccasion: state.lastOccasion,
+                notifications: state.notifications,
             }),
         }
     )

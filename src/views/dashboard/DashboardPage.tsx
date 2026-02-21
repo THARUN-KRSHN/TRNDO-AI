@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Search, Activity, Sparkles, BarChart3, Users, Zap, X, Info, ShoppingCart, TrendingUp, MapPin, Calendar } from 'lucide-react';
 import { useDashboardStore } from '@/store/useDashboardStore';
 import { BrandLogo, LiveIndicator } from './components/Common';
-import { TrendCard } from './components/TrendCard';
+import { TrendCard, TrendCardSkeleton } from './components/TrendCard';
 import { OrderTimeline } from './components/OrderTimeline';
 import { CreativeDrawer } from './components/CreativeDrawer';
 import { InvoicePanel } from './components/InvoicePanel';
@@ -23,6 +23,9 @@ export const DashboardPage = () => {
     const [isNotificationOpen, setNotificationOpen] = useState(false);
     const [isHydrated, setIsHydrated] = useState(false);
 
+    const addNotification = useDashboardStore((state: any) => state.addNotification);
+    const notifications = useDashboardStore((state: any) => state.notifications);
+
     React.useEffect(() => {
         setIsHydrated(true);
         if (isHydrated) {
@@ -30,6 +33,14 @@ export const DashboardPage = () => {
                 router.push('/login');
             } else if (user) {
                 fetchTrends();
+                // Add welcome notification if none exist
+                if (notifications.length === 0) {
+                    addNotification({
+                        title: 'Welcome to TRNDO AI',
+                        message: `Welcome back, ${user.name}! Your local market is pulsing with 14 new scouts. Check the trends to start generating today.`,
+                        type: 'info'
+                    });
+                }
             }
         }
     }, [user, router, isHydrated, fetchTrends]);
@@ -40,7 +51,7 @@ export const DashboardPage = () => {
     const renderContent = () => {
         switch (activeTab) {
             case 'overview':
-                return <OverviewContent trends={trends} />;
+                return <OverviewContent trends={trends} isSyncing={isSyncingTrends} />;
             case 'orders':
                 return (
                     <div className="h-[calc(100vh-160px)] grid grid-cols-12 gap-8">
@@ -54,7 +65,7 @@ export const DashboardPage = () => {
             case 'settings':
                 return <ProfileView />;
             default:
-                return <OverviewContent trends={trends} />;
+                return <OverviewContent trends={trends} isSyncing={isSyncingTrends} />;
         }
     };
 
@@ -85,12 +96,12 @@ export const DashboardPage = () => {
                     </div>
 
                     <div className="flex items-center gap-8">
-                        <div className="hidden md:flex items-center gap-4 px-6 py-3 rounded-full bg-gray-50 border border-black/5">
+                        <div className="hidden md:flex items-center gap-4 px-6 py-3 rounded-xl bg-gray-50 transition-all border-none focus-within:bg-white focus-within:shadow-lg">
                             <Search size={14} className="text-black/20" />
                             <input
                                 type="text"
                                 placeholder="Filter Data..."
-                                className="bg-transparent border-none focus:ring-0 text-[10px] font-bold-extended uppercase italic tracking-widest w-40 placeholder:text-black/10"
+                                className="bg-transparent border-none focus:ring-0 outline-none text-[13px] font-bold-extended uppercase italic tracking-widest w-40 placeholder:text-black/10"
                             />
                         </div>
                         <div className="flex items-center gap-4">
@@ -124,11 +135,35 @@ export const DashboardPage = () => {
 };
 
 const NotificationPanel = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
-    const notifications = [
-        { id: 1, title: 'Heavy Spike!', message: 'Linen shirts trending +40% in Thrissur', time: '2m ago', type: 'trend', icon: TrendingUp, color: 'text-emerald-500 bg-emerald-50' },
-        { id: 2, title: 'New Order', message: 'Anjali waiting for Korean Buns invoice', time: '15m ago', type: 'order', icon: ShoppingCart, color: 'text-blue-500 bg-blue-50' },
-        { id: 3, title: 'System Info', message: 'Scout network expanded to Calicut', time: '1h ago', type: 'info', icon: Info, color: 'text-purple-500 bg-purple-50' },
-    ];
+    const notifications = useDashboardStore((state: any) => state.notifications);
+    const addNotification = useDashboardStore((state: any) => state.addNotification);
+    const clearNotifications = useDashboardStore((state: any) => state.clearNotifications);
+    const setSelectedTrend = useDashboardStore((state: any) => state.setSelectedTrend);
+
+    const getIcon = (type: string) => {
+        switch (type) {
+            case 'trend': return TrendingUp;
+            case 'order': return ShoppingCart;
+            case 'invoice': return Sparkles;
+            default: return Info;
+        }
+    };
+
+    const getColor = (type: string) => {
+        switch (type) {
+            case 'trend': return 'text-emerald-500 bg-emerald-50';
+            case 'order': return 'text-blue-500 bg-blue-50';
+            case 'invoice': return 'text-yellow-500 bg-yellow-50';
+            default: return 'text-purple-500 bg-purple-50';
+        }
+    };
+
+    const handleNotificationClick = (n: any) => {
+        if (n.type === 'trend' && n.data) {
+            setSelectedTrend(n.data);
+            onClose();
+        }
+    };
 
     return (
         <AnimatePresence>
@@ -156,26 +191,42 @@ const NotificationPanel = ({ isOpen, onClose }: { isOpen: boolean, onClose: () =
                         </div>
 
                         <div className="space-y-4">
-                            {notifications.map((n) => (
-                                <div key={n.id} className="p-6 rounded-3xl bg-[#F8F8F8] border border-black/5 hover:bg-white hover:shadow-xl hover:shadow-black/5 transition-all cursor-pointer group">
-                                    <div className="flex gap-4">
-                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${n.color}`}>
-                                            <n.icon size={20} />
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className="flex justify-between items-start mb-1">
-                                                <h4 className="text-xs font-bold-extended uppercase italic tracking-wider">{n.title}</h4>
-                                                <span className="text-[8px] font-bold-extended uppercase tracking-widest text-black/20">{n.time}</span>
+                            {notifications.length > 0 ? (
+                                notifications.map((n: any) => {
+                                    const Icon = getIcon(n.type);
+                                    return (
+                                        <div
+                                            key={n.id}
+                                            onClick={() => handleNotificationClick(n)}
+                                            className="p-6 rounded-3xl bg-[#F8F8F8] border border-black/5 hover:bg-white hover:shadow-xl hover:shadow-black/5 transition-all cursor-pointer group"
+                                        >
+                                            <div className="flex gap-4">
+                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${getColor(n.type)}`}>
+                                                    <Icon size={20} />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="flex justify-between items-start mb-1">
+                                                        <h4 className="text-xs font-bold-extended uppercase italic tracking-wider">{n.title}</h4>
+                                                        <span className="text-[8px] font-bold-extended uppercase tracking-widest text-black/20">{n.time}</span>
+                                                    </div>
+                                                    <p className="text-[10px] font-thin-extended italic text-black/60 leading-relaxed uppercase">{n.message}</p>
+                                                </div>
                                             </div>
-                                            <p className="text-[10px] font-thin-extended italic text-black/60 leading-relaxed uppercase">{n.message}</p>
                                         </div>
-                                    </div>
+                                    );
+                                })
+                            ) : (
+                                <div className="text-center py-20">
+                                    <p className="text-[10px] font-bold-extended uppercase italic text-black/20">No signals detected yet</p>
                                 </div>
-                            ))}
+                            )}
                         </div>
 
                         <div className="absolute bottom-8 left-8 right-8">
-                            <button className="w-full py-4 rounded-2xl bg-black text-white text-[10px] font-bold-extended uppercase tracking-widest italic shadow-xl shadow-black/20">
+                            <button
+                                onClick={clearNotifications}
+                                className="w-full py-4 rounded-2xl bg-black text-white text-[10px] font-bold-extended uppercase tracking-widest italic shadow-xl shadow-black/20"
+                            >
                                 Clear All Signals
                             </button>
                         </div>
@@ -186,117 +237,190 @@ const NotificationPanel = ({ isOpen, onClose }: { isOpen: boolean, onClose: () =
     );
 };
 
-const OverviewContent = ({ trends }: { trends: any[] }) => (
-    <div className="space-y-12">
-        <header className="flex justify-between items-end mb-8">
-            <div>
-                <span className="text-[10px] font-bold-extended uppercase tracking-widest text-yellow-500 italic mb-2 block">Intelligence Summary</span>
-                <h1 className="text-5xl md:text-7xl font-bold-extended uppercase italic leading-[0.85] tracking-tighter">Pulse<br />Dashboard.</h1>
-            </div>
-            <div className="text-right pb-2 hidden md:block">
-                <span className="text-[10px] font-bold-extended uppercase tracking-widest text-black/20 block italic">Global Rank</span>
-                <span className="text-4xl font-bold-extended italic">#14</span>
-            </div>
-        </header>
+const OverviewContent = ({ trends, isSyncing }: { trends: any[], isSyncing: boolean }) => {
+    const isLoading = isSyncing || trends.length === 0;
 
-        <div className="grid grid-cols-12 gap-8">
-            {/* Main Stats */}
-            <div className="col-span-12 lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Performance Card */}
-                <div className="p-10 rounded-[3rem] bg-black text-white flex flex-col justify-between h-80 lg:h-auto">
-                    <div>
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="p-2 rounded-xl bg-white/10">
-                                <Activity size={20} className="text-yellow-400" />
-                            </div>
-                            <span className="text-[10px] font-bold-extended uppercase tracking-widest text-white/40 italic">Store Velocity</span>
-                        </div>
-                        <div className="text-6xl font-bold-extended italic mb-2 tracking-tighter">84.2%</div>
-                        <p className="text-[10px] font-bold-extended uppercase tracking-widest text-emerald-400 italic">↑ 12% from last week</p>
-                    </div>
-                    <div className="pt-8 border-t border-white/10">
-                        <div className="flex justify-between items-center text-[8px] font-bold-extended uppercase tracking-widest text-white/30">
-                            <span>Predicted Growth</span>
-                            <span>+4.2k INR / day</span>
-                        </div>
-                    </div>
+    // Derived Data Calculations
+    const avgVelocity = trends.length > 0
+        ? (trends.reduce((acc, t) => acc + t.anchorVelocity, 0) / trends.length).toFixed(1)
+        : "0";
+
+    const sortedTrends = [...trends].sort((a, b) => b.anchorVelocity - a.anchorVelocity);
+    const topTrend = sortedTrends[0];
+    const secondTrend = sortedTrends[1];
+
+    const totalSouls = trends.length * 142 + 420; // Simulated reach based on trend volume
+    const peakGrowth = (Math.max(...trends.map(t => t.anchorVelocity)) / 2).toFixed(1);
+
+    return (
+        <div className="space-y-12">
+            <header className="flex justify-between items-end mb-8">
+                <div>
+                    <span className="text-[10px] font-bold-extended uppercase tracking-widest text-yellow-500 italic mb-2 block">Intelligence Summary</span>
+                    <h1 className="text-5xl md:text-7xl font-bold-extended uppercase italic leading-[0.85] tracking-tighter">Pulse<br />Dashboard.</h1>
                 </div>
-
-                {/* AI Insight Card */}
-                <div className="p-10 rounded-[3rem] bg-white border border-black/5 shadow-2xl shadow-black/5 flex flex-col justify-between h-80 lg:h-auto">
-                    <div>
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="p-2 rounded-xl bg-purple-100">
-                                <Sparkles size={20} className="text-purple-600" />
-                            </div>
-                            <span className="text-[10px] font-bold-extended uppercase tracking-widest text-black/40 italic">AI Prediction</span>
-                        </div>
-                        <h3 className="text-2xl font-bold-extended uppercase italic tracking-tighter leading-tight mb-4">
-                            Heavy spike in <br /> "K-Coffee" <br /> detected.
-                        </h3>
-                    </div>
-                    <button className="flex items-center gap-3 group text-black">
-                        <span className="text-[10px] font-bold-extended uppercase italic underline">Apply Strategy</span>
-                        <div className="w-6 h-6 rounded-lg bg-black text-white flex items-center justify-center group-hover:translate-x-1 transition-transform">
-                            <span className="text-xs">→</span>
-                        </div>
-                    </button>
+                <div className="text-right pb-2 hidden md:block">
+                    <span className="text-[10px] font-bold-extended uppercase tracking-widest text-black/20 block italic">Global Rank</span>
+                    {isLoading ? (
+                        <div className="h-10 w-20 bg-gray-200 animate-pulse rounded-lg ml-auto mt-2" />
+                    ) : (
+                        <span className="text-4xl font-bold-extended italic">#{Math.floor(100 - parseFloat(avgVelocity)) || 14}</span>
+                    )}
                 </div>
+            </header>
 
-                {/* Trends Preview */}
-                <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {trends.slice(0, 2).map((trend: any) => (
-                        <TrendCard key={trend.id} trend={trend} />
-                    ))}
-                </div>
-            </div>
-
-            {/* Sidebar Stats */}
-            <div className="col-span-12 lg:col-span-4 space-y-6">
-                <div className="p-8 rounded-[2.5rem] bg-white border border-black/5 shadow-xl shadow-black/5">
-                    <div className="flex items-center gap-4 mb-8">
-                        <div className="p-3 rounded-2xl bg-blue-50 text-blue-600">
-                            <Users size={20} />
-                        </div>
+            <div className="grid grid-cols-12 gap-8">
+                {/* Main Stats */}
+                <div className="col-span-12 lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Performance Card */}
+                    <div className="p-10 rounded-[3rem] bg-black text-white flex flex-col justify-between h-80 lg:h-auto">
                         <div>
-                            <span className="text-[10px] font-bold-extended uppercase tracking-widest text-black/40 italic">Local Awareness</span>
-                            <h4 className="text-xl font-bold-extended uppercase italic tracking-tighter">1,240 Souls</h4>
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="p-2 rounded-xl bg-white/10">
+                                    <Activity size={20} className="text-yellow-400" />
+                                </div>
+                                <span className="text-[10px] font-bold-extended uppercase tracking-widest text-white/40 italic">Market Velocity</span>
+                            </div>
+                            {isLoading ? (
+                                <div className="space-y-4">
+                                    <div className="h-16 w-3/4 bg-white/10 animate-pulse rounded-2xl" />
+                                    <div className="h-4 w-1/2 bg-white/10 animate-pulse rounded-full" />
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="text-6xl font-bold-extended italic mb-2 tracking-tighter">{avgVelocity}%</div>
+                                    <p className="text-[10px] font-bold-extended uppercase tracking-widest text-emerald-400 italic">↑ {((parseFloat(avgVelocity) / 10)).toFixed(1)}% vs baseline</p>
+                                </>
+                            )}
+                        </div>
+                        <div className="pt-8 border-t border-white/10">
+                            <div className="flex justify-between items-center text-[8px] font-bold-extended uppercase tracking-widest text-white/30">
+                                <span>Projected Impact</span>
+                                {isLoading ? (
+                                    <div className="h-3 w-20 bg-white/10 animate-pulse rounded-full" />
+                                ) : (
+                                    <span>+{peakGrowth}k Engagement / day</span>
+                                )}
+                            </div>
                         </div>
                     </div>
-                    <div className="space-y-4">
-                        <div className="flex justify-between text-[8px] font-bold-extended uppercase tracking-widest text-black/40">
-                            <span>Peak Time</span>
-                            <span className="text-black">6:00 PM - 9:00 PM</span>
+
+                    {/* AI Insight Card */}
+                    <div className="p-10 rounded-[3rem] bg-white border border-black/5 shadow-2xl shadow-black/5 flex flex-col justify-between h-80 lg:h-auto">
+                        <div>
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="p-2 rounded-xl bg-purple-100">
+                                    <Sparkles size={20} className="text-purple-600" />
+                                </div>
+                                <span className="text-[10px] font-bold-extended uppercase tracking-widest text-black/40 italic">AI Prediction</span>
+                            </div>
+                            {isLoading ? (
+                                <div className="space-y-3">
+                                    <div className="h-8 w-full bg-gray-100 animate-pulse rounded-lg" />
+                                    <div className="h-8 w-3/4 bg-gray-100 animate-pulse rounded-lg" />
+                                    <div className="h-8 w-1/2 bg-gray-100 animate-pulse rounded-lg" />
+                                </div>
+                            ) : (
+                                <h3 className="text-2xl font-bold-extended uppercase italic tracking-tighter leading-tight mb-4">
+                                    Heavy spike in <br /> "{topTrend?.keyword}" <br /> detected.
+                                </h3>
+                            )}
                         </div>
-                        <div className="h-1.5 w-full bg-gray-50 rounded-full overflow-hidden">
-                            <div className="h-full w-[80%] bg-blue-500 rounded-full" />
-                        </div>
+                        <button
+                            onClick={() => topTrend && useDashboardStore.getState().setSelectedTrend(topTrend)}
+                            className="flex items-center gap-3 group text-black w-fit"
+                        >
+                            <span className="text-[10px] font-bold-extended uppercase italic underline">Apply Strategy</span>
+                            <div className="w-6 h-6 rounded-lg bg-black text-white flex items-center justify-center group-hover:translate-x-1 transition-transform">
+                                <span className="text-xs">→</span>
+                            </div>
+                        </button>
+                    </div>
+
+                    {/* Trends Preview */}
+                    <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {isLoading ? (
+                            <>
+                                <TrendCardSkeleton />
+                                <TrendCardSkeleton />
+                            </>
+                        ) : (
+                            sortedTrends.slice(0, 2).map((trend: any) => (
+                                <TrendCard key={trend.id} trend={trend} />
+                            ))
+                        )}
                     </div>
                 </div>
 
-                <div className="p-8 rounded-[2.5rem] bg-emerald-50 border border-emerald-100">
-                    <div className="flex items-center gap-4 mb-6">
-                        <div className="p-3 rounded-2xl bg-white text-emerald-600 shadow-sm">
-                            <Zap size={20} />
+                {/* Sidebar Stats */}
+                <div className="col-span-12 lg:col-span-4 space-y-6">
+                    <div className="p-8 rounded-[2.5rem] bg-white border border-black/5 shadow-xl shadow-black/5">
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="p-3 rounded-2xl bg-blue-50 text-blue-600">
+                                <Users size={20} />
+                            </div>
+                            <div>
+                                <span className="text-[10px] font-bold-extended uppercase tracking-widest text-black/40 italic">Market Awareness</span>
+                                {isLoading ? (
+                                    <div className="h-6 w-32 bg-gray-100 animate-pulse rounded-lg mt-1" />
+                                ) : (
+                                    <h4 className="text-xl font-bold-extended uppercase italic tracking-tighter">{totalSouls.toLocaleString()} Souls</h4>
+                                )}
+                            </div>
                         </div>
-                        <h4 className="text-lg font-bold-extended uppercase italic tracking-tighter text-emerald-950">Active Scout Pulse</h4>
+                        <div className="space-y-4">
+                            <div className="flex justify-between text-[8px] font-bold-extended uppercase tracking-widest text-black/40">
+                                <span>Pulse Density</span>
+                                {isLoading ? (
+                                    <div className="h-3 w-24 bg-gray-100 animate-pulse rounded-full" />
+                                ) : (
+                                    <span className="text-black">High Connectivity</span>
+                                )}
+                            </div>
+                            <div className="h-1.5 w-full bg-gray-50 rounded-full overflow-hidden">
+                                <div className={`h-full bg-blue-500 rounded-full transition-all duration-1000 ${isLoading ? 'w-0' : 'w-[80%]'}`} style={{ width: `${avgVelocity}%` }} />
+                            </div>
+                        </div>
                     </div>
-                    <p className="text-[10px] font-bold-extended uppercase tracking-widest text-emerald-900/40 italic leading-relaxed">
-                        Anchor Hub Thrissur is currently syncing new data packets from 14 street-scouts.
-                    </p>
-                </div>
 
-                <div className="p-8 rounded-[2.5rem] bg-indigo-600 text-white relative overflow-hidden group cursor-pointer">
-                    <h4 className="text-xl font-bold-extended uppercase italic tracking-tighter leading-tight relative z-10">Market DNA is evolving.</h4>
-                    <p className="text-[10px] font-thin-extended italic text-white/50 mt-4 mb-6 relative z-10 leading-relaxed">
-                        Your local velocity is outpacing the anchor by 12%. Shift focus to premium artisan goods.
-                    </p>
-                    <BarChart3 className="absolute -bottom-4 -right-4 w-24 h-24 text-white/5 group-hover:scale-110 transition-transform" />
+                    <div className="p-8 rounded-[2.5rem] bg-emerald-50 border border-emerald-100">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="p-3 rounded-2xl bg-white text-emerald-600 shadow-sm">
+                                <Zap size={20} />
+                            </div>
+                            <h4 className="text-lg font-bold-extended uppercase italic tracking-tighter text-emerald-950">Active Scout Pulse</h4>
+                        </div>
+                        {isLoading ? (
+                            <div className="space-y-2">
+                                <div className="h-3 w-full bg-emerald-100 animate-pulse rounded-full" />
+                                <div className="h-3 w-5/6 bg-emerald-100 animate-pulse rounded-full" />
+                            </div>
+                        ) : (
+                            <p className="text-[10px] font-bold-extended uppercase tracking-widest text-emerald-900/40 italic leading-relaxed">
+                                {useDashboardStore.getState().user?.location} Hub is currently syncing data from {trends.length * 4} local scouts.
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="p-8 rounded-[2.5rem] bg-indigo-600 text-white relative overflow-hidden group cursor-pointer">
+                        <h4 className="text-xl font-bold-extended uppercase italic tracking-tighter leading-tight relative z-10">Market DNA is evolving.</h4>
+                        {isLoading ? (
+                            <div className="space-y-2 mt-4 mb-6 relative z-10">
+                                <div className="h-3 w-full bg-white/10 animate-pulse rounded-full" />
+                                <div className="h-3 w-4/5 bg-white/10 animate-pulse rounded-full" />
+                            </div>
+                        ) : (
+                            <p className="text-[10px] font-thin-extended italic text-white/50 mt-4 mb-6 relative z-10 leading-relaxed">
+                                Your top trend "{topTrend?.keyword}" is outpacing local baseline by {(topTrend?.anchorVelocity - parseFloat(avgVelocity)).toFixed(1)}%. Shift focus to premium artisan goods.
+                            </p>
+                        )}
+                        <BarChart3 className="absolute -bottom-4 -right-4 w-24 h-24 text-white/5 group-hover:scale-110 transition-transform" />
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-);
+    );
+};
 
 const TIMEFRAMES = [
     "now 1-H", "now 4-H", "now 1-d", "now 7-d", "today 1-m", "today 3-m", "today 12-m", "today 5-y", "all"
@@ -356,14 +480,14 @@ const TrendsContent = ({ trends, onRefresh, isSyncing }: { trends: any[], onRefr
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div className="lg:col-span-2 relative group">
                             <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/20 to-purple-400/20 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
-                            <div className="relative flex items-center gap-4 px-6 py-4 rounded-2xl bg-white border border-black/5 shadow-xl shadow-black/5 group-focus-within:border-black/20 transition-all">
+                            <div className="relative flex items-center gap-4 px-8 py-5 rounded-xl bg-gray-50 transition-all duration-300 group-focus-within:bg-white group-focus-within:shadow-xl shadow-black/5">
                                 <Search size={18} className="text-black/20 group-focus-within:text-black transition-colors" />
                                 <input
                                     type="text"
                                     value={customOccasion}
                                     onChange={(e) => setCustomOccasion(e.target.value)}
                                     placeholder="Describe occasion..."
-                                    className="bg-transparent border-none focus:ring-0 text-[10px] font-bold-extended uppercase italic tracking-widest w-full placeholder:text-black/10 text-black"
+                                    className="bg-transparent border-none focus:ring-0 outline-none text-[13px] font-bold-extended uppercase italic tracking-widest w-full placeholder:text-black/10 text-black p-0"
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') handleSync();
                                     }}
@@ -375,7 +499,7 @@ const TrendsContent = ({ trends, onRefresh, isSyncing }: { trends: any[], onRefr
                             <select
                                 value={location}
                                 onChange={(e) => setLocation(e.target.value)}
-                                className="w-full h-full px-6 py-4 rounded-2xl bg-white border border-black/5 shadow-xl shadow-black/5 text-[10px] font-bold-extended uppercase italic tracking-widest focus:ring-1 focus:ring-black/20 appearance-none cursor-pointer"
+                                className="w-full h-full px-6 py-4 rounded-2xl bg-white border-none shadow-xl shadow-black/5 text-[13px] font-bold-extended uppercase italic tracking-widest focus:ring-0 outline-none appearance-none cursor-pointer"
                             >
                                 {LOCATIONS.map(loc => (
                                     <option key={loc.value} value={loc.value}>{loc.label}</option>
@@ -390,7 +514,7 @@ const TrendsContent = ({ trends, onRefresh, isSyncing }: { trends: any[], onRefr
                             <select
                                 value={timeframe}
                                 onChange={(e) => setTimeframe(e.target.value)}
-                                className="w-full h-full px-6 py-4 rounded-2xl bg-white border border-black/5 shadow-xl shadow-black/5 text-[10px] font-bold-extended uppercase italic tracking-widest focus:ring-1 focus:ring-black/20 appearance-none cursor-pointer"
+                                className="w-full h-full px-6 py-4 rounded-2xl bg-white border-none shadow-xl shadow-black/5 text-[13px] font-bold-extended uppercase italic tracking-widest focus:ring-0 outline-none appearance-none cursor-pointer"
                             >
                                 {TIMEFRAMES.map(tf => (
                                     <option key={tf} value={tf}>{tf}</option>
@@ -415,9 +539,17 @@ const TrendsContent = ({ trends, onRefresh, isSyncing }: { trends: any[], onRefr
                 </div>
             </header>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {trends.map((trend: any) => (
-                    <TrendCard key={trend.id} trend={trend} />
-                ))}
+                {isSyncing || trends.length === 0 ? (
+                    Array.from({ length: 6 }).map((_, i) => (
+                        <TrendCardSkeleton key={i} />
+                    ))
+                ) : (
+                    [...trends]
+                        .sort((a, b) => b.anchorVelocity - a.anchorVelocity)
+                        .map((trend: any) => (
+                            <TrendCard key={trend.id} trend={trend} />
+                        ))
+                )}
             </div>
         </div>
     );

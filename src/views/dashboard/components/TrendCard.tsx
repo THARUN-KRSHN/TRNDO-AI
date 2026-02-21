@@ -106,3 +106,20 @@ export const TrendCard = ({ trend }: { trend: Trend }) => {
         </motion.div>
     );
 };
+export const TrendCardSkeleton = () => (
+    <div className="p-8 rounded-3xl bg-white shadow-2xl shadow-black/5 border border-black/5 overflow-hidden animate-pulse">
+        <div className="flex justify-between items-start mb-6">
+            <div className="w-12 h-12 rounded-2xl bg-gray-100" />
+            <div className="w-24 h-6 rounded-full bg-gray-100" />
+        </div>
+        <div className="h-8 w-3/4 bg-gray-100 rounded-lg mb-8" />
+        <div className="flex flex-col items-center">
+            <div className="w-32 h-16 bg-gray-100 rounded-t-full mb-2" />
+            <div className="h-4 w-12 bg-gray-100 rounded-full" />
+        </div>
+        <div className="mt-8 flex justify-between">
+            <div className="h-4 w-24 bg-gray-100 rounded-full" />
+            <div className="w-8 h-8 rounded-full bg-gray-100" />
+        </div>
+    </div>
+);

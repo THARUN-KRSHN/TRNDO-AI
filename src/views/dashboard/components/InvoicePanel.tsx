@@ -15,7 +15,7 @@ interface InvoiceForm {
 }
 
 export const InvoicePanel = () => {
-    const { isInvoiceOpen, setInvoiceOpen, selectedOrder, updateOrder } = useDashboardStore();
+    const { isInvoiceOpen, setInvoiceOpen, selectedOrder, updateOrder, addNotification } = useDashboardStore();
     const [form, setForm] = useState<InvoiceForm>({
         item: '',
         variant: 'Standard',
@@ -54,6 +54,11 @@ export const InvoicePanel = () => {
                 amount: parseFloat(form.amount),
                 phone: form.phone,
                 quantity: parseInt(form.quantity)
+            });
+            addNotification({
+                title: 'Invoice Ready',
+                message: `Invoice for ${form.customer} is ready to be forwarded. Details sent to WhatsApp.`,
+                type: 'invoice'
             });
             setTimeout(() => setInvoiceOpen(false), 1500);
         }, 1500);
