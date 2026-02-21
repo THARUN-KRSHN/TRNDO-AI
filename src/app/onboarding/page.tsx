@@ -1,5 +1,5 @@
 "use client";
-import { OnboardingPage } from "@/pages/onboarding/OnboardingPage";
+import { OnboardingPage } from "@/views/onboarding/OnboardingPage";
 
 export default function Page() {
     return <OnboardingPage />;

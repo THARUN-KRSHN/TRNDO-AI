@@ -6,15 +6,8 @@ export const BrandLogo = () => {
     return (
         <div className="flex items-center gap-2">
             <span className="text-xl font-bold-extended tracking-tighter text-black uppercase italic scale-x-110 origin-left">
-                trnd
+                TRNDO
             </span>
-            <motion.div
-                animate={{ scale: [1, 1.2, 1], opacity: [1, 0.8, 1] }}
-                transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                className="w-6 h-6 rounded-lg bg-yellow-400 flex items-center justify-center shadow-lg shadow-yellow-400/20"
-            >
-                <span className="text-white text-xs font-bold-extended italic">O</span>
-            </motion.div>
             <span className="text-xs font-thin-extended tracking-widest text-black/30 uppercase ml-2">
                 AI Intelligence
             </span>
@@ -64,8 +57,8 @@ export const GlowButton = ({ children, onClick, variant = 'primary' }: { childre
         whileTap={{ scale: 0.98 }}
         onClick={onClick}
         className={`px-6 py-3 rounded-full font-bold-extended uppercase italic text-xs tracking-widest transition-all ${variant === 'primary'
-                ? 'bg-yellow-400 text-black shadow-lg shadow-yellow-400/20 hover:bg-yellow-300'
-                : 'bg-black text-white shadow-lg shadow-black/10'
+            ? 'bg-yellow-400 text-black shadow-lg shadow-yellow-400/20 hover:bg-yellow-300'
+            : 'bg-black text-white shadow-lg shadow-black/10'
             }`}
     >
         {children}
