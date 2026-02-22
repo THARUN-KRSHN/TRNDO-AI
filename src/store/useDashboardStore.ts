@@ -17,6 +17,7 @@ export interface Order {
     phone: string | null;
     amount: number | null;
     status: 'pending' | 'in_progress' | 'completed';
+    raw_items?: any[];
 }
 
 export interface UserProfile {
@@ -73,6 +74,7 @@ interface DashboardState {
     clearNotifications: () => void;
     updateOrder: (orderId: string, updates: Partial<Order>) => void;
     addOrder: (order: Order) => void;
+    deleteOrder: (orderId: string) => void;
     setUser: (user: UserProfile | null) => void;
     setActiveTab: (tab: DashboardTab) => void;
     setPosterConfig: (config: Partial<PosterConfig>) => void;
@@ -96,7 +98,7 @@ export const useDashboardStore = create<DashboardState>()(
     persist(
         (set, get) => ({
             trends: INITIAL_TRENDS,
-            orders: INITIAL_ORDERS,
+            orders: [],
             selectedTrend: null,
             selectedOrder: null,
             isDrawerOpen: false,
@@ -132,9 +134,18 @@ export const useDashboardStore = create<DashboardState>()(
             updateOrder: (orderId, updates) => set((state) => ({
                 orders: state.orders.map((o) => o.id === orderId ? { ...o, ...updates } : o)
             })),
-            addOrder: (order) => set((state) => ({
-                orders: [order, ...state.orders]
-            })),
+            addOrder: (order) => set((state) => {
+                const exists = state.orders.some(o => o.id === order.id);
+                if (exists) return state;
+                return { orders: [order, ...state.orders] };
+            }),
+            deleteOrder: (orderId: string) => {
+                console.log('Deleting order:', orderId);
+                set((state) => ({
+                    orders: state.orders.filter((o) => String(o.id) !== String(orderId)),
+                    selectedOrder: state.selectedOrder?.id === orderId ? null : state.selectedOrder
+                }));
+            },
             setUser: (user) => set({ user }),
             setActiveTab: (tab) => set({ activeTab: tab }),
             setPosterConfig: (config) => set((state) => ({
@@ -185,17 +196,6 @@ export const useDashboardStore = create<DashboardState>()(
                             };
                         });
                         set({ trends: newTrends, lastOccasion: cacheKey });
-
-                        // Add top trend notification
-                        const topTrend = [...newTrends].sort((a, b) => b.anchorVelocity - a.anchorVelocity)[0];
-                        if (topTrend) {
-                            get().addNotification({
-                                title: 'Market Spike!',
-                                message: `${topTrend.keyword} is trending at ${topTrend.anchorVelocity}% velocity`,
-                                type: 'trend',
-                                data: topTrend
-                            });
-                        }
                     } else if (data.error) {
                         throw new Error(data.error);
                     }

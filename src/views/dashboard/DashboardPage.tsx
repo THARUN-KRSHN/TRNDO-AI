@@ -53,7 +53,7 @@ export const DashboardPage = () => {
 
         const pollNotifications = async () => {
             try {
-                const response = await fetch('https://invoice-makeaton-production.up.railway.app/api/notifications');
+                const response = await fetch('http://localhost:5000/api/notifications');
                 const data = await response.json();
 
                 if (Array.isArray(data) && data.length > 0) {
@@ -69,7 +69,7 @@ export const DashboardPage = () => {
                     });
 
                     // Clear notifications from server once polled
-                    await fetch('https://invoice-makeaton-production.up.railway.app/api/notifications', { method: 'DELETE' });
+                    await fetch('http://localhost:5000/api/notifications', { method: 'DELETE' });
                 }
             } catch (error) {
                 console.error('Failed to poll notifications:', error);
@@ -198,7 +198,7 @@ const NotificationPanel = ({ isOpen, onClose }: { isOpen: boolean, onClose: () =
             setSelectedTrend(n.data);
             onClose();
         } else if (n.type === 'invoice' && n.url) {
-            window.open(`https://invoice-makeaton-production.up.railway.app${n.url}`, '_blank');
+            window.open(`http://localhost:5000${n.url}`, '_blank');
         }
     };
 

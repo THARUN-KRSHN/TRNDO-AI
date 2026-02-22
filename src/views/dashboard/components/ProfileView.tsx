@@ -30,7 +30,7 @@ export const ProfileView = () => {
 
         // Sync to Flask Backend
         try {
-            await fetch('https://invoice-makeaton-production.up.railway.app/api/business-profile', {
+            await fetch('http://localhost:5000/api/business-profile', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

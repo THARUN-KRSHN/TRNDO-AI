@@ -42,9 +42,8 @@ export const InvoicePanel = () => {
         }
     }, [selectedOrder]);
 
-    if (!selectedOrder) return null;
-
     const user = useDashboardStore((state: any) => state.user);
+    if (!selectedOrder) return null;
 
     const handleSubmit = async () => {
         if (!user) {
@@ -58,15 +57,24 @@ export const InvoicePanel = () => {
 
         setIsSubmitting(true);
         try {
-            const response = await fetch('https://invoice-makeaton-production.up.railway.app/api/generate-invoice-direct', {
+            // If the amount and quantity match the original detected order, use the raw itemized list
+            // Otherwise, use the form data but calculate unit price correctly
+            const isOriginal = selectedOrder.raw_items &&
+                parseFloat(form.amount) === selectedOrder.amount &&
+                parseInt(form.quantity) === selectedOrder.quantity &&
+                form.item === selectedOrder.item;
+
+            const items = isOriginal ? selectedOrder.raw_items : [{
+                item: form.item,
+                quantity: parseInt(form.quantity) || 1,
+                price: (parseFloat(form.amount) || 0) / (parseInt(form.quantity) || 1)
+            }];
+
+            const response = await fetch('http://localhost:5000/api/generate-invoice-direct', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    items: [{
-                        item: form.item,
-                        quantity: parseInt(form.quantity) || 1,
-                        price: parseFloat(form.amount) || 0
-                    }],
+                    items,
                     upi_id: user.defaultUpiId || "merchant@upi",
                     customer_name: form.customer,
                     customer_phone: form.phone,

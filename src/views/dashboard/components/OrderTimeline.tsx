@@ -1,12 +1,19 @@
 "use client";
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, Clock, CheckCircle2, MoreVertical } from 'lucide-react';
+import { MessageSquare, Clock, CheckCircle2, MoreVertical, Trash2 } from 'lucide-react';
 import { useDashboardStore, Order } from '@/store/useDashboardStore';
 import { ProgressBar, StatusBadge } from './Common';
 
 const OrderCard = ({ order }: { order: Order }) => {
     const setSelectedOrder = useDashboardStore((state: any) => state.setSelectedOrder);
+    const deleteOrder = useDashboardStore((state: any) => state.deleteOrder);
+
+    const handleDelete = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        console.log('Delete button clicked for:', order.id);
+        deleteOrder(order.id);
+    };
 
     const getProgress = (o: Order) => {
         let p = 25;
@@ -34,6 +41,13 @@ const OrderCard = ({ order }: { order: Order }) => {
                     </span>
                 </div>
                 <div className="flex items-center gap-2">
+                    <button
+                        onClick={handleDelete}
+                        className="p-2 rounded-lg bg-red-50 text-red-400 opacity-40 hover:opacity-100 group-hover:opacity-100 transition-all hover:bg-red-500 hover:text-white"
+                        title="Delete Order"
+                    >
+                        <Trash2 size={14} />
+                    </button>
                     {order.status === 'completed' ? (
                         <CheckCircle2 size={16} className="text-emerald-500" />
                     ) : (
@@ -44,10 +58,10 @@ const OrderCard = ({ order }: { order: Order }) => {
                 </div>
             </div>
 
-            <div className="flex items-center gap-3 mb-6 p-4 rounded-2xl bg-[#F8F8F8]">
-                <MessageSquare size={14} className="text-black/20" />
-                <p className="text-xs font-thin-extended italic text-black/60 truncate">
-                    "Can you send {order.item}..."
+            <div className="flex items-start gap-3 mb-6 p-4 rounded-2xl bg-[#F8F8F8]">
+                <MessageSquare size={14} className="text-black/20 mt-1" />
+                <p className="text-xs font-thin-extended italic text-black/60 leading-relaxed">
+                    Order contains: <span className="text-black font-bold-extended not-italic">{order.item}</span>
                 </p>
             </div>
 
@@ -65,6 +79,17 @@ const OrderCard = ({ order }: { order: Order }) => {
 export const OrderTimeline = () => {
     const orders = useDashboardStore((state: any) => state.orders);
 
+    React.useEffect(() => {
+        console.log('Orders updated. Count:', orders.length);
+    }, [orders]);
+    const setOrders = useDashboardStore((state: any) => state.setOrders);
+
+    const handleClearAll = () => {
+        if (window.confirm('Clear all orders?')) {
+            setOrders([]);
+        }
+    };
+
     return (
         <div className="h-full flex flex-col">
             <div className="flex justify-between items-center mb-10">
@@ -77,8 +102,16 @@ export const OrderTimeline = () => {
                         <h2 className="text-xl font-bold-extended uppercase italic tracking-tighter">Order Feed</h2>
                     </div>
                 </div>
-                <div className="flex items-center gap-2 text-emerald-500">
-                    <span className="text-[8px] font-bold-extended uppercase tracking-widest italic animate-pulse">Syncing...</span>
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={handleClearAll}
+                        className="text-[10px] font-bold-extended uppercase tracking-widest text-black/20 hover:text-red-500 transition-colors italic"
+                    >
+                        Clear All
+                    </button>
+                    <div className="flex items-center gap-2 text-emerald-500">
+                        <span className="text-[8px] font-bold-extended uppercase tracking-widest italic animate-pulse">Syncing...</span>
+                    </div>
                 </div>
             </div>
 
